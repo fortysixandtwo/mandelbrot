@@ -1,19 +1,49 @@
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from gmpy2 import mpc, mpz, mpq, mpfr
 import numpy as np
 import random
 import time
 
 
 def f(z,c): #Iterationsvorschrift
-  return z*z+c
+    return z*z+c
 
+class MandelbrotSet():
+    def __init__(self, _xmin, _xmax, _ymin, _ymax, _Nx, _Ny, _maxRadius, _maxIterations):
+      self.xmin = _xmin
+      self.xmax = _xmax
+      self.ymin = _ymin
+      self.ymax = _ymax
+      self.Nx = _Nx
+      self.Ny = _Ny
+      self.maxRadius = _maxRadius
+      self.maxIterations = _maxIterations
+      self.recalculate()
+
+      def recalculate():
+        # set precision based on min, max and N
+        self.x = np.linspace(self.xmin, self.xmax, self.Nx)
+        self.y = np.linspace(self.ymin, self.ymax, self.Ny)
+        self.data = np.zeroes((self.Nx, self.Ny))
+        maxRad2 = self.maxRadius * self.maxRadius
+        for i in range(Nx):
+          for j in range(Ny):
+            nIter = 0
+            z = mpc(x[i], y[j])
+            c = z
+            while (nIter < self.maxIterations) and ((z.real*z.real+z.imag*z.imag) <= maxRad2):
+              z = f(z,c)
+              nIter += 1
+            self.data[i,j] = nIter
+              
+      
 class MandelbrotWidget(QWidget):
     def __init__(self, parent=None):
         super(MandelbrotWidget,self).__init__(parent)
 
-        self.setMinimumSize(320,240)
+        self.setMinimumSize(640,480)
         self.xmin = -1.5
         self.xmax = 0.5
         self.ymin = -1.5
@@ -173,7 +203,7 @@ class Form(QWidget):
 
         self.setLayout(mainLayout)
         self.resize(self.sizeHint())
-        self.setWindowTitle("Mandelbrot with PyQt5")
+        self.setWindowTitle("Mandelbrot with PyQt5 and gmpy2")
 
         # event handling, TODO window resize, mouse scroll for zoom
 
