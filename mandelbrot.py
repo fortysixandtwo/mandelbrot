@@ -1,44 +1,93 @@
+import matplotlib
+matplotlib.use("Qt5Agg")
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib import mpl
 from gmpy2 import mpc, mpz, mpq, mpfr
 import numpy as np
 import random
 import time
 
 
+def timeIt(func, parms=None):
+    t = time.time()
+    if parms is None:
+        func()
+    else:
+        func(parms)
+    return time.time()-t
+
+def getColorFromIterations(fraction):
+    # fraction is number of iterations divided by maximum iteration number
+    # neat blue->violet transition
+    c = int(fraction * 255)
+    m = 255
+    y = 0
+    k = 0
+    if (fraction == 1.):
+        k = 255
+    return QColor.fromCmyk(c,m,y,k)
+
 def f(z,c): #Iterationsvorschrift
     return z*z+c
 
+class MandelMplCanvas(FigureCanvas):
+    """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
+    def __init__(self, mandel, parent=None, width=5, height=4, dpi=100):
+        self.mandel = mandel
+        if (mandel.__class__.__name__ != "MandelbrotSet"):
+            print('mandel var {}  is not of type MandelbrotSet!')
+            exit(1)
+        fig = Figure(figsize=(width,height),dpi=dpi)
+        self.plt = fig.add_subplot(111)
+        self.plt.hold(False)
+        self.compute_figure()
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+        FigureCanvas.setSizePolicy(self, QSizePolicyExpanding, QSizePolicyExpanding)
+        FigureCanvas.updateGeometry(self)
+
+    def compute_figure(self):
+        cmap = mpl.colors.LinearSegmentedColormap.from_list('blue velvet', ['fuchsia', 'darkblue', 'black'], self.maxIterations)
+        extent = (self.mandel.xmin, self.mandel.xmax, self.mandel.ymin, self.mandel.ymax)
+        self.plt.imshow(self.mandel.data, cmap=cmap, extent=extent)
+
 class MandelbrotSet():
     def __init__(self, _xmin, _xmax, _ymin, _ymax, _Nx, _Ny, _maxRadius, _maxIterations):
-      self.xmin = _xmin
-      self.xmax = _xmax
-      self.ymin = _ymin
-      self.ymax = _ymax
-      self.Nx = _Nx
-      self.Ny = _Ny
-      self.maxRadius = _maxRadius
-      self.maxIterations = _maxIterations
-      self.recalculate()
-
-      def recalculate():
-        # set precision based on min, max and N
+        self.xmin = mpfr(_xmin)
+        self.xmax = mpfr(_xmax)
+        self.ymin = mpfr(_ymin)
+        self.ymax = mpfr(_ymax)
+        self.Nx = _Nx
+        self.Ny = _Ny
+        self.maxRadius = _maxRadius
+        self.maxIterations = _maxIterations
         self.x = np.linspace(self.xmin, self.xmax, self.Nx)
         self.y = np.linspace(self.ymin, self.ymax, self.Ny)
-        self.data = np.zeroes((self.Nx, self.Ny))
+        self.data = np.zeros((self.Nx, self.Ny), dtype=np.int64)
+        self.recalculate()
+
+    def recalculate(self):
+        # set precision based on min, max and N?
+        # gmpy2.get_context().precision = 53 (std)
+        self.x = np.linspace(self.xmin, self.xmax, self.Nx)
+        self.y = np.linspace(self.ymin, self.ymax, self.Ny)
+        self.data = np.zeros((self.Nx, self.Ny))
         maxRad2 = self.maxRadius * self.maxRadius
-        for i in range(Nx):
-          for j in range(Ny):
+        for i in range(self.Nx):
+          for j in range(self.Ny):
             nIter = 0
-            z = mpc(x[i], y[j])
+            z = mpc(self.x[i], self.y[j])
             c = z
             while (nIter < self.maxIterations) and ((z.real*z.real+z.imag*z.imag) <= maxRad2):
               z = f(z,c)
               nIter += 1
             self.data[i,j] = nIter
               
-      
+"""1 Year Old. Redo is overdue      
 class MandelbrotWidget(QWidget):
     def __init__(self, parent=None):
         super(MandelbrotWidget,self).__init__(parent)
@@ -247,3 +296,4 @@ if __name__ == '__main__':
     screen.show()
 
     sys.exit(app.exec_())
+"""
