@@ -6,4 +6,5 @@ Depends on PyQt5
 
 Totally not awesome (yet)
 
-Usage: python3 mandelbrot.py
+Usage: python mandelbrot.py
+Either python or python3 should run with dependencies installed.
